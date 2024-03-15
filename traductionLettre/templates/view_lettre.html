@@ -1,0 +1,44 @@
+<!-- view_lettre.html -->
+{% extends 'base.html' %}
+{% block extra_css %}
+<style>
+       .button-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+       }
+       .col {
+  height: calc(100vh - 100px); /* Adjust 100px for header/footer height if needed */
+}
+
+.form-control.h-100 {
+  flex-grow: 0; /* Remove flex-grow to limit vertical expansion */
+}
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+     <div class="row min-vh-100">
+        <div class="col d-flex flex-column justify-content-between">
+            <!-- Form chỉnh sửa -->
+            <form action="{% url 'edit_lettre' lettre.id %}" method="post" class="d-flex flex-column h-100">
+                {% csrf_token %}
+                <div class="mb-3 flex-grow-1">
+                    <label for="texte" class="form-label">Nom de la lettre: 
+                        {{ lettre.nom  }} </label>
+                    <textarea class="form-control h-100" id="texte" name="texte" rows="20"
+                              cols="50">{{ lettre.text_original }}</textarea>
+                </div>
+                  <!-- Add a CSS class to this div -->
+                <div class="button-wrapper">
+                    <button type="submit" class="btn btn-primary mt-3 align-self-first">
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

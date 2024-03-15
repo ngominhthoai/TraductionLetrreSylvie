@@ -1,0 +1,165 @@
+<!-- home.html -->
+{% extends 'base.html' %}
+
+{% block extra_css %}
+    <!-- Thêm DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap5.min.css">
+    <style>
+        .table-primary > td {
+            background-color: #fbfbfc;
+        }
+
+        .table-success > td {
+            background-color: #aaf1ba;
+        }
+
+        .table-info > td {
+            background-color: #f5d766;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="mt-4"> <!-- Đã sửa đổi ở đây để thêm container và khoảng cách trên -->
+        <div class="row">
+            <div class="col-md-8 mx-auto"> <!-- Sử dụng col-md-12 để chiếm toàn bộ chiều rộng của row -->
+                <label for="lot-select" class="form-label">Selectionnez un lot de lettre: </label>
+                <select id="lot-select" class="form-select mb-3">
+                    <option value="">
+                        -- Choisir un lot de lettre --
+                    </option>
+                    {% for lot in lots %}
+                        <option value="{{ lot.id }}">{{ lot.nom }}</option>
+                    {% endfor %}
+                </select>
+                <!-- Các nút và bảng tiếp theo -->
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <table id="lettres-datatable" class="display" style="width:100%">
+                    <thead>
+                    <tr>
+                        <th>Numero</th>
+                        <th>Nom Lettre</th>
+                        <th>Status</th>
+                        <th>Traduire</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!-- Nội dung bảng sẽ được load bằng AJAX -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- ... nội dung khác ... -->
+
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- import jQuery và DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    {#    <script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>#}
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
+    <!-- Popper.js, cần thiết cho các tooltip và popovers -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var table = $('#lettres-datatable').DataTable({
+                "paging": true,
+                "searching": true,
+                "language": {
+                    "url": "https://cdn.datatables.net/plug-ins/1.10.21/i18n/French.json"
+                },
+                "columns": [
+                    //số thứ tự tự tăng
+                    {
+                        "data": null,
+                        "render": function (data, type, row, meta) {
+                            return meta.row + 1;
+                        },
+                        //chieu rong cot nhỏ lại
+                        "width": "5%"
+                    },
+                    {"data": "nom"},
+                    {
+                        "data": "status",
+                        //căn giữa dữ liệu trong cột
+                        //nếu status = Lire thi hien thi là "Chưa đọc", neu status = Lu thi hien thi là "Đã đọc", neu status = Faite thi hien thi là "Đã xử lý"
+                        "render": function (data, type, row) {
+                            if (data === 'Lire') {
+                                return "pas encore lu";
+                            } else if (data === 'Lu') {
+                                return "Déjà lu";
+                            } else if (data === 'Faite') {
+                                return "Déjà traité";
+                            }
+                        },
+                        "className": "text-center"
+                    },
+                    {
+                        "data": null,
+                        // Đoạn mã JavaScript để thêm sự kiện click vào nút "Lire Lettre"
+                        "render": function (data, type, row) {
+                            return `<button type="button" class="btn btn-outline-secondary" onclick="location.href='/lettres/${row.id}/translate/'">Traduire Lettre</button>`;
+                        },
+                        //căn giữa dữ liệu trong cột
+                        "className": "text-center"
+                    },
+                ],
+                "rowCallback": function (row, data, index) {
+                    // Xóa các class hiện có
+                    $(row).removeClass('table-primary table-success table-info');
+
+                    // Thêm màu background dựa trên status: Lire, Lu, Faite
+                    if (data.status === 'Lire') {
+                        $(row).addClass('table-primary');
+                    } else if (data.status === 'Lu') {
+                        $(row).addClass('table-success');
+                    } else if (data.status === 'Faite') {
+                        $(row).addClass('table-info');
+                    }
+                },
+                "order": [[0, "asc"]],
+            });
+
+            function updateTableWithSelectedLot(lotId) {
+                $.ajax({
+                    url: "{% url 'ajax_load_lettres' %}",
+                    type: "GET",
+                    data: {'lot_id': lotId},
+                    dataType: "json",
+                    success: function (response) {
+                        // Cập nhật dữ liệu bảng
+                        var table = $('#lettres-datatable').DataTable();
+                        table.clear().rows.add(response.data).draw();
+                    },
+                    error: function (error) {
+                        console.error("Có lỗi khi lấy dữ liệu: ", error);
+                    }
+                });
+            }
+
+            $('#lot-select').on('change', function () {
+                var lotId = $(this).val();
+                if (lotId) {
+                    var selectedLotId = $(this).val();
+                    $('#selected-lot-id').val(selectedLotId);
+                    $('#selected-archive-lot-id').val(selectedLotId);
+                    updateTableWithSelectedLot(selectedLotId);
+                } else {
+                    var table = $('#lettres-datatable').DataTable();
+                    table.clear().draw();
+                }
+            });
+        });
+    </script>
+{% endblock %}
