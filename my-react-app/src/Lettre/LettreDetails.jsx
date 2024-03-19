@@ -1,27 +1,33 @@
-import { useQuery } from "@apollo/client";
-import { useParams } from "react-router-dom";
-import { GET_LETTRE_DETAILS } from "../graphql/queries/GetLettreDetails";
+import {useQuery} from '@apollo/client';
+import {GET_LETTRE_DETAILS} from '../graphql/queries/GetLettreDetails';
+import {useParams} from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import {useNavigate} from "react-router-dom";
 
 function LettreDetails() {
-  let { id } = useParams();
-  const { loading, error, data } = useQuery(GET_LETTRE_DETAILS, {
-    variables: { id: parseInt(id, 10) },
-  });
+    const {lettreId} = useParams();
+    const navigate = useNavigate();
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error :(</p>;
+    const {loading, error, data} = useQuery(GET_LETTRE_DETAILS, {
+        variables: {id: parseInt(lettreId)},
+    });
 
-  // Ensure data and data.lettre exist before attempting to access data.lettre properties
-  if (!data || !data.lettre) return <p>Letter not found</p>;
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p>Error: {error.message}</p>;
 
-  return (
-    <div>
-      <h2>{data.lettre.nom}</h2>
-      <p><strong>Text Original:</strong> {data.lettre.textOriginal}</p>
-      <p><strong>Text Traduction:</strong> {data.lettre.textTraduction}</p>
-      <p><strong>Status:</strong> {data.lettre.status}</p>
-    </div>
-  );
+    return (
+        <div className={'container'}>
+            <h1 className={'text-center'}>Lettre Details</h1>
+            <p className={'text-center'}>Lettre ID: {data.lettre.id}</p>
+            <p className={'text-center'}>Lettre Nom: {data.lettre.nom}</p>
+            <p className={'text-center'}>Lettre Text Original: {data.lettre.textOriginal}</p>
+            <p className={'text-center'}>Lettre Text Traduction: {data.lettre.textTraduction}</p>
+            <p className={'text-center'}>Lettre Status: {data.lettre.status}</p>
+            <button onClick={() => navigate(`/update-lettre/${lettreId}`)} className="btn btn-primary">
+                Update
+            </button>
+        </div>
+    )
 }
 
 export default LettreDetails;
